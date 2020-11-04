@@ -31,7 +31,7 @@ def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(f"""
 Hey there!
 Use /set <minutes> to set the interval i should look for new votes.
-Use /cancel to stop the bot from texting you.
+Use /cancel to stop me from texting you.
 
 Currently the following states are considered: {battlegrounds}.
 """)
@@ -97,7 +97,7 @@ def cancel(update: Update, context: CallbackContext) -> None:
     """Allow the user to cancel the updates"""
     chat_id = update.message.chat_id
     job_removed = remove_job_if_exists(str(chat_id), context)
-    text = 'Updates disabled!' if job_removed else 'This bot is disabled'
+    text = "I won't bother you anymore." if job_removed else "I didn't plan on texting you anyway."
     update.message.reply_text(text)
 
 
