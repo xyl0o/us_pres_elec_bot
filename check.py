@@ -63,7 +63,7 @@ Trump has {curr_c['Donald Trump']['votes']:,} votes ({curr_c['Donald Trump']['vo
 
 {"Biden" if biden_ahead else "Trump"} is ahead of {"Trump" if biden_ahead else "Biden"} by {candidate_delta:,} votes.
 
-Votes casted: {curr_cast:,} / {curr_all:,} ({prev_cast/prev_all * 100: 3.2f}%)
+Votes casted: {curr_cast:,} / {curr_all:,} ({curr_cast/curr_all * 100: 3.2f}%)
 """
 
 
