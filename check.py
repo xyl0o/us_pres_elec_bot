@@ -82,13 +82,14 @@ if __name__ == '__main__':
     old = parse_data(get_data())
 
     while True:
-
         new = parse_data(get_data())
         changes = False
 
-        for k in d.keys() & battlegrounds:
+        for k in set(new.keys()).intersection(battlegrounds):
             if old[k]['votes_cast'] != new[k]['votes_cast']:
-                textify_change(old[k], new[k])
+
+                print(textify_change(k, old[k], new[k]))
+
                 old[k] = new[k]
                 changes = True
 
