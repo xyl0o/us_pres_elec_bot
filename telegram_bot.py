@@ -47,17 +47,17 @@ def check(context):
         user_data[chat_id]['state'] = parse_data(get_data())
         return  # if first exec, no changes
 
-    previous = user_data[chat_id]['state']
-    current = parse_data(get_data())
+    old = user_data[chat_id]['state']
+    new = parse_data(get_data())
 
-    for k in current.keys() & battlegrounds:
-        if previous[k]['votes_cast'] != current[k]['votes_cast']:
+    for k in new.keys() & battlegrounds:
+        if old[k]['votes_cast'] != new[k]['votes_cast']:
 
             context.bot.send_message(
                 chat_id,
-                text=textify_change(k, previous[k], current[k]))
+                text=textify_change(k, old[k], new[k]))
 
-            previous[k] = current[k]
+            old[k] = new[k]
 
 
 def remove_job_if_exists(name, context):
