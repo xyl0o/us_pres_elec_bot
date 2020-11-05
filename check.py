@@ -41,7 +41,7 @@ def get_data():
 
 def filter_states(old, new, battlegrounds):
     for state in set(new.keys()).intersection(battlegrounds):
-        if (new[state]['votes_cast'] - old[state]['votes_cast']) > 10:
+        if abs(new[state]['votes_cast'] - old[state]['votes_cast']) > 10:
             yield state
 
 
