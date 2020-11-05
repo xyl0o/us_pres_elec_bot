@@ -35,6 +35,8 @@ Use /set <minutes> to set the interval i should look for new votes.
 Use /cancel to stop me from texting you.
 Use /poll to get updates now.
 Use /info <state> to get current state votes.
+Use /watch <state> to add state to your watchlist.
+Use /unwatch <state> to add unwatch a state.
 Use /states to get a list of all states.
 
 Currently the following states are considered: {battlegrounds}.
@@ -61,6 +63,16 @@ def _check(user_data):
     user_data['old'] = old
 
     return True
+
+
+def _select_state(txt):
+    if (txt_upper := txt.upper()) in states_dict.keys():
+        return states_dict[txt_upper]
+
+    if txt in states_dict.values():
+        return txt
+
+    return
 
 
 def check(context):
@@ -97,10 +109,14 @@ def set_interval(update: Update, context: CallbackContext) -> None:
         _ = remove_job_if_exists(str(chat_id), context)
         context.job_queue.run_repeating(check, interval, context=chat_id, name=str(chat_id))
         context.bot_data['intervals'].update({chat_id: interval})
+        if 'watchlist' not in context.user_data:
+            context.user_data['watchlist'] = battlegrounds
 
-        text = 'Interval set successfully!'
+        txt = 'Interval set successfully!\n'
+        txt += 'You are currently watching '
+        txt += ', '.join(sorted(context.user_data['watchlist']))
 
-        update.message.reply_text(text)
+        update.message.reply_text(txt)
 
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /set <minutes>')
@@ -145,6 +161,50 @@ def info(update: Update, context: CallbackContext) -> None:
             state=state, new=new[state], candidates=candidates))
 
 
+def watch(update: Update, context: CallbackContext) -> None:
+    """Allow the user to cancel the updates"""
+    chat_id = update.message.chat_id
+
+    try:
+        raw_state = str(context.args[0])
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /watch <state>')
+        return
+
+    if not (state := _select_state(raw_state)):
+        update.message.reply_text(f'Unknown state {raw_state}')
+        return
+
+    if 'watchlist' not in context.user_data:
+        context.user_data['watchlist'] = battlegrounds
+
+    update.message.reply_text(f"I've added {state} to your watchlist.")
+
+    context.user_data['watchlist'] |= {state}
+
+
+def unwatch(update: Update, context: CallbackContext) -> None:
+    """Allow the user to cancel the updates"""
+    chat_id = update.message.chat_id
+
+    try:
+        raw_state = context.args[0]
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /unwatch <state>')
+        return
+
+    if not (state := _select_state(raw_state)):
+        update.message.reply_text(f'Unknown state {raw_state}')
+        return
+
+    if 'watchlist' not in context.user_data:
+        context.user_data['watchlist'] = battlegrounds
+
+    update.message.reply_text(f"I've removed {state} from your watchlist.")
+
+    context.user_data['watchlist'] -= {state}
+
+
 def main():
     persistence = PicklePersistence(filename='bot_persistence')
 
@@ -159,6 +219,8 @@ def main():
     updater.dispatcher.add_handler(CommandHandler("poll", poll))
     updater.dispatcher.add_handler(CommandHandler("cancel", cancel))
     updater.dispatcher.add_handler(CommandHandler("info", info))
+    updater.dispatcher.add_handler(CommandHandler("watch", watch))
+    updater.dispatcher.add_handler(CommandHandler("unwatch", unwatch))
 
     if 'intervals' not in updater.dispatcher.bot_data:
         updater.dispatcher.bot_data['intervals'] = {}
