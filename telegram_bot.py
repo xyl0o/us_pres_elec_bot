@@ -5,6 +5,7 @@ from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext, PicklePersistence
 
 from check import parse_data, get_data, textify_change, filter_states
+from states import states_dict
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -33,6 +34,7 @@ Hey there!
 Use /set <minutes> to set the interval i should look for new votes.
 Use /cancel to stop me from texting you.
 Use /poll to get updates now.
+Use /info <state> to get current state votes.
 
 Currently the following states are considered: {battlegrounds}.
 """)
@@ -118,6 +120,26 @@ def poll(update: Update, context: CallbackContext) -> None:
     context.job_queue.run_once(check, 0, context=chat_id, name=f"{chat_id}_poll")
 
 
+def info(update: Update, context: CallbackContext) -> None:
+    """Allow the user to cancel the updates"""
+    chat_id = update.message.chat_id
+
+    try:
+        state_abbrev = context.args[0]
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /info <state>')
+        return
+
+    if not (state := states_dict.get(state_abbrev.upper())):
+        update.message.reply_text(f'Unknown state {state_abbrev}')
+        return
+
+    new = parse_data(get_data())
+    update.message.reply_text(
+        textify_change(
+            state=state, new=new[state], candidates=candidates))
+
+
 def main():
     persistence = PicklePersistence(filename='bot_persistence')
 
@@ -131,6 +153,7 @@ def main():
     updater.dispatcher.add_handler(CommandHandler("set", set_interval))
     updater.dispatcher.add_handler(CommandHandler("poll", poll))
     updater.dispatcher.add_handler(CommandHandler("cancel", cancel))
+    updater.dispatcher.add_handler(CommandHandler("info", info))
 
     if 'intervals' not in updater.dispatcher.bot_data:
         updater.dispatcher.bot_data['intervals'] = {}
