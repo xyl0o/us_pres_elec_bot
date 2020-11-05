@@ -205,6 +205,22 @@ def unwatch(update: Update, context: CallbackContext) -> None:
     context.user_data['watchlist'] -= {state}
 
 
+def states(update: Update, context: CallbackContext) -> None:
+    """Allow the user to cancel the updates"""
+    chat_id = update.message.chat_id
+
+    watchlist = context.user_data.get('watchlist', set())
+
+    txt = 'I know of the following states:\n'
+    for k, v in states_dict.items():
+        txt += f'{v} ({k})'
+        if v in watchlist:
+            txt += ' - watching'
+        txt += '\n'
+
+    update.message.reply_text(txt)
+
+
 def main():
     persistence = PicklePersistence(filename='bot_persistence')
 
@@ -221,6 +237,7 @@ def main():
     updater.dispatcher.add_handler(CommandHandler("info", info))
     updater.dispatcher.add_handler(CommandHandler("watch", watch))
     updater.dispatcher.add_handler(CommandHandler("unwatch", unwatch))
+    updater.dispatcher.add_handler(CommandHandler("states", states))
 
     if 'intervals' not in updater.dispatcher.bot_data:
         updater.dispatcher.bot_data['intervals'] = {}
