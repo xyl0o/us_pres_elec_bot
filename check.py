@@ -67,7 +67,9 @@ def textify_change(state_name, old, new, candidates):
         votes = new['candidates'][c]['votes']
         txt += f"{c} has {votes:,} votes ({round(votes / curr_cast * 100, 2): 3.2f}%)\n"
 
-    lead_delta = new['candidates'][sorted_candidates[1]] - new['candidates'][sorted_candidates[0]]
+    lead_delta = (
+        new['candidates'][sorted_candidates[0]]['votes']
+        - new['candidates'][sorted_candidates[1]]['votes'])
 
     txt += "\n"
     txt += f"{sorted_candidates[0]} is ahead of {sorted_candidates[1]} by {lead_delta:,} votes.\n"
