@@ -31,11 +31,11 @@ candidates = ['Joe Biden', 'Donald Trump']
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(f"""
 Hey there!
-Use /set <minutes> to set the interval i should look for new votes.
+Use /set <minutes> to set the update interval.
 Use /cancel to stop me from texting you.
-Use /poll to get updates now.
+Use /poll to force me to look for updates now.
 Use /info <state> to get current state votes.
-Use /watch <state> to add state to your watchlist.
+Use /watch <state> to add a state to your watchlist.
 Use /unwatch <state> to add unwatch a state.
 Use /states to get a list of all states.
 
