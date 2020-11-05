@@ -2,7 +2,7 @@ import logging
 import os
 
 from telegram import Update
-from telegram.ext import Updater, CommandHandler, CallbackContext
+from telegram.ext import Updater, CommandHandler, CallbackContext, PicklePersistence
 
 from check import parse_data, get_data, textify_change, filter_states
 
@@ -26,8 +26,6 @@ battlegrounds = {
 
 candidates = ['Joe Biden', 'Donald Trump']
 
-user_data = {}  # no persistence!
-
 
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(f"""
@@ -42,15 +40,17 @@ Currently the following states are considered: {battlegrounds}.
 def check(context):
     """Crawl api and notfy "subscribers" if votes changed"""
 
+    dp = context.dispatcher
+    user_data = dp.user_data
+
     chat_id = context.job.context
 
-    if chat_id not in user_data:
-        user_data[chat_id] = {}
-        user_data[chat_id]['state'] = parse_data(get_data())
-        return  # if first exec, no changes
-
-    old = user_data[chat_id]['state']
     new = parse_data(get_data())
+    old = user_data.get('old')
+
+    if not old:
+        user_data['old'] = new
+        return
 
     for state in filter_states(old, new, battlegrounds):
 
@@ -60,6 +60,8 @@ def check(context):
         context.bot.send_message(chat_id, text=txt)
 
         old[state] = new[state]
+
+    user_data['old'] = old
 
 
 def remove_job_if_exists(name, context):
