@@ -35,19 +35,13 @@ Use /set <minutes> to set the interval i should look for new votes.
 Use /cancel to stop me from texting you.
 Use /poll to get updates now.
 Use /info <state> to get current state votes.
+Use /states to get a list of all states.
 
 Currently the following states are considered: {battlegrounds}.
 """)
 
 
-def check(context):
-    """Crawl api and notfy "subscribers" if votes changed"""
-
-    dp = context.dispatcher
-    user_data = dp.user_data
-
-    chat_id = context.job.context
-
+def _check(user_data):
     new = parse_data(get_data())
     old = user_data.get('old')
 
@@ -55,12 +49,10 @@ def check(context):
         user_data['old'] = new
         return
 
-    for state in filter_states(old, new, battlegrounds):
+    for state in filter_states(old, new, user_data['watchlist']):
 
-        txt = textify_change(
+        yield textify_change(
             state=state, old=old[state], new=new[state], candidates=candidates)
-
-        context.bot.send_message(chat_id, text=txt)
 
         old[state] = new[state]
     else:
@@ -69,6 +61,15 @@ def check(context):
     user_data['old'] = old
 
     return True
+
+
+def check(context):
+    """Crawl api and notfy "subscribers" if votes changed"""
+
+    chat_id = context.job.context
+
+    for txt in _check(context.dispatcher.user_data):
+        context.bot.send_message(chat_id, text=txt)
 
 
 def remove_job_if_exists(name, context):
@@ -117,7 +118,11 @@ def cancel(update: Update, context: CallbackContext) -> None:
 def poll(update: Update, context: CallbackContext) -> None:
     """Allow the user to cancel the updates"""
     chat_id = update.message.chat_id
-    context.job_queue.run_once(check, 0, context=chat_id, name=f"{chat_id}_poll")
+
+    for txt in _check(context.user_data):
+        update.message.reply_text(txt)
+    else:
+        update.message.reply_text("No changes found")
 
 
 def info(update: Update, context: CallbackContext) -> None:
