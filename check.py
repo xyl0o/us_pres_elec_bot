@@ -82,6 +82,15 @@ def textify_change(state_name, old, new, candidates):
 
 
 if __name__ == '__main__':
+    battlegrounds = {
+        'Arizona',
+        'Georgia',
+        'Nevada',
+        'North Carolina',
+        'Pennsylvania',
+    }
+
+    candidates = ['Joe Biden', 'Donald Trump']
 
     old = parse_data(get_data())
 
@@ -92,12 +101,15 @@ if __name__ == '__main__':
         for k in set(new.keys()).intersection(battlegrounds):
             if old[k]['votes_cast'] != new[k]['votes_cast']:
 
-                print(textify_change(k, old[k], new[k]))
-
+                print(textify_change(
+                    state_name=k,
+                    old=old[k],
+                    new=new[k],
+                    candidates=candidates))
                 old[k] = new[k]
                 changes = True
 
         if not changes:
             print(f"no changes {datetime.now()}")
 
-        sleep(60)
+        sleep(30)
