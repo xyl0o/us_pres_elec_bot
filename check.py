@@ -73,16 +73,21 @@ def textify_change(state, new, candidates, old=None):
         votes = new['candidates'][c]['votes']
         txt += f"{c} has {votes:,} votes ({round(votes / curr_cast * 100, 2): 3.2f}%)\n"
 
-    lead_delta = (
+    lead_delta = abs(
         new['candidates'][sorted_candidates[0]]['votes']
         - new['candidates'][sorted_candidates[1]]['votes'])
 
-    txt += "\n"
-    txt += f"{sorted_candidates[0]} is ahead of {sorted_candidates[1]} by {lead_delta:,} votes.\n"
+    open_votes = curr_all - curr_cast
 
     txt += "\n"
-    txt += f"So far {curr_cast:,} votes have been counted ({curr_cast/curr_all * 100: 3.2f}%)\n"
-    txt += f"This leaves about {int(round(curr_all - curr_cast, -2)):,} votes on the table.\n"
+
+    if open_votes < lead_delta:
+        txt += f"{sorted_candidates[0]} won this state by a {lead_delta:,} marin.\n"
+    else:
+        txt += f"{sorted_candidates[0]} is ahead of {sorted_candidates[1]} by {lead_delta:,} votes.\n"
+        txt += "\n"
+        txt += f"So far {curr_cast:,} votes have been counted ({curr_cast/curr_all * 100: 3.2f}%)\n"
+        txt += f"This leaves about {int(round(open_votes, -2)):,} votes on the table.\n"
 
     return txt
 
