@@ -5,7 +5,7 @@ from telegram import Update
 from telegram import ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackContext, PicklePersistence
 
-from check import parse_data, get_data, textify_change, filter_states
+from check import parse_data, get_data, textify_change
 from states import states_dict
 
 logging.basicConfig(
@@ -51,11 +51,12 @@ def _check(api_data, user_data):
         user_data['old'] = api_data
         return False
 
-    for state in filter_states(old, api_data, user_data['watchlist']):
-        yield textify_change(
-            state=state, old=old[state], new=api_data[state], candidates=candidates)
+    for state in set(api_data.keys()).intersection(user_data['watchlist']):
+        if abs(api_data[state]['votes_cast'] - user_data['old'][state]['votes_cast']) > 10:
+            yield textify_change(
+                state=state, old=old[state], new=api_data[state], candidates=candidates)
 
-        old[state] = api_data[state]
+            old[state] = api_data[state]
     else:
         return False # loop never ran
 

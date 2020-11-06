@@ -39,12 +39,6 @@ def get_data():
     return requests.get(api_endpoint).json()
 
 
-def filter_states(old, new, battlegrounds):
-    for state in set(new.keys()).intersection(battlegrounds):
-        if abs(new[state]['votes_cast'] - old[state]['votes_cast']) > 10:
-            yield state
-
-
 def textify_change(state, new, candidates, old=None):
     curr_cast = new['votes_cast']
     curr_all = new['votes_all']
