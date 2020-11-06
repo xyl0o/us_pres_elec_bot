@@ -41,6 +41,8 @@ Use /info <state> to get current state votes.
 Use /info to get current state votes of your watchlist.
 Use /watch <state> to add a state to your watchlist.
 Use /unwatch <state> to unwatch a state.
+Use /limit <votes> to set a vote limit for updates.
+I will notify you when one candidate crosses limit.
 """)
 
 
@@ -81,6 +83,9 @@ def _get_user_data(chat_id, bot_data):
 
     if 'watchlist' not in user_data:
         user_data['watchlist'] = battlegrounds
+
+    if 'limit' not in user_data:
+        user_data['limit'] = 0
 
     return user_data
 
@@ -185,6 +190,24 @@ def unsubscribe(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(f"I won't bother you with updates anymore.")
 
 
+def limit(update: Update, context: CallbackContext) -> None:
+    """Allow the user to cancel the updates"""
+    chat_id = update.message.chat_id
+    user_data = _get_user_data(chat_id, context.bot_data)
+
+    try:
+        vote_limit = int(context.args[0])
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /limit <votes>')
+        return
+
+    user_data['limit'] = vote_limit
+
+    txt = "I won't notify you until a candidate gained "
+    txt += f"more than {vote_limit} votes."
+    update.message.reply_text(txt)
+
+
 def poll_api(context):
     api_data = parse_data(get_data())
 
@@ -221,6 +244,7 @@ def main():
     updater.dispatcher.add_handler(CommandHandler("state", info))
     updater.dispatcher.add_handler(CommandHandler("subscribe", subscribe))
     updater.dispatcher.add_handler(CommandHandler("unsubscribe", unsubscribe))
+    updater.dispatcher.add_handler(CommandHandler("limit", limit))
 
     updater.dispatcher.bot_data['chats'] = \
         updater.dispatcher.bot_data.get('chats', {})
