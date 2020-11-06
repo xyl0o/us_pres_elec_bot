@@ -34,11 +34,12 @@ Hey there!
 
 Use /subscribe to get vote updates.
 Use /unsubscribe to stop me from texting you.
+Use /states to get a list of all states.
+Use /state <state> to get current state votes.
 Use /info <state> to get current state votes.
 Use /info to get current state votes of your watchlist.
 Use /watch <state> to add a state to your watchlist.
 Use /unwatch <state> to unwatch a state.
-Use /states to get a list of all states.
 """)
 
 
@@ -212,6 +213,7 @@ def main():
     updater.dispatcher.add_handler(CommandHandler("watch", watch))
     updater.dispatcher.add_handler(CommandHandler("unwatch", unwatch))
     updater.dispatcher.add_handler(CommandHandler("states", states))
+    updater.dispatcher.add_handler(CommandHandler("state", info))
     updater.dispatcher.add_handler(CommandHandler("subscribe", subscribe))
     updater.dispatcher.add_handler(CommandHandler("unsubscribe", unsubscribe))
 
