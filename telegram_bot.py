@@ -32,7 +32,7 @@ def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(f"""
 Hey there!
 
-Use /subscribe <minutes> to get vote updates.
+Use /subscribe to get vote updates.
 Use /unsubscribe to stop me from texting you.
 Use /info <state> to get current state votes.
 Use /info to get current state votes of your watchlist.
