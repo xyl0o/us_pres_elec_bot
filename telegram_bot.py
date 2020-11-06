@@ -37,7 +37,7 @@ Use /unsubscribe to stop me from texting you.
 Use /info <state> to get current state votes.
 Use /info to get current state votes of your watchlist.
 Use /watch <state> to add a state to your watchlist.
-Use /unwatch <state> to add unwatch a state.
+Use /unwatch <state> to unwatch a state.
 Use /states to get a list of all states.
 """)
 
