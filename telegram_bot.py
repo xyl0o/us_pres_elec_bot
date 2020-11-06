@@ -2,6 +2,7 @@ import logging
 import os
 
 from telegram import Update
+from telegram import ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackContext, PicklePersistence
 
 from check import parse_data, get_data, textify_change, filter_states
@@ -108,7 +109,7 @@ def info(update: Update, context: CallbackContext) -> None:
         for s in states)
 
     if txt:
-        update.message.reply_text(txt)
+        update.message.reply_text(txt, parse_mode=ParseMode.HTML)
 
 
 def watch(update: Update, context: CallbackContext) -> None:
@@ -194,10 +195,14 @@ def poll_api(context):
 
         user_data = _get_user_data(chat_id, context.bot_data)
 
-        txt = "\n\n".join(_check(api_data, user_data))
-        if txt:
-            context.bot.send_message(chat_id, text=txt)
+        for txt in _check(api_data, user_data):
+            context.bot.send_message(
+                chat_id, text=txt, parse_mode=ParseMode.HTML)
 
+        # txt = "\n\n".join(_check(api_data, user_data))
+        # if txt:
+        #     context.bot.send_message(
+        #         chat_id, text=txt, parse_mode=ParseMode.HTML)
 
 def main():
     persistence = PicklePersistence(filename='bot_persistence')
