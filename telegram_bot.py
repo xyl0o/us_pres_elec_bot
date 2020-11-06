@@ -101,9 +101,13 @@ def info(update: Update, context: CallbackContext) -> None:
         states = {state}
 
     new = parse_data(get_data())
-    for s in states:
-        update.message.reply_text(
-            textify_change(state=s, new=new[s], candidates=candidates))
+
+    txt = "\n\n".join(
+        textify_change(state=s, new=new[s], candidates=candidates)
+        for s in states)
+
+    if txt:
+        update.message.reply_text(txt)
 
 
 def watch(update: Update, context: CallbackContext) -> None:
@@ -189,7 +193,8 @@ def poll_api(context):
 
         user_data = _get_user_data(chat_id, context.bot_data)
 
-        for txt in _check(api_data, user_data):
+        txt = "\n\n".join(_check(api_data, user_data))
+        if txt:
             context.bot.send_message(chat_id, text=txt)
 
 
