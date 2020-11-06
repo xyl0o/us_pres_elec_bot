@@ -42,7 +42,7 @@ Use /info to get current state votes of your watchlist.
 Use /watch <state> to add a state to your watchlist.
 Use /unwatch <state> to unwatch a state.
 Use /limit <votes> to set a vote limit for updates.
-I will notify you when one candidate crosses limit.
+I will notify you when votes cast crosses limit.
 """)
 
 
@@ -52,9 +52,15 @@ def _check(api_data, user_data):
         return False
 
     for state in set(api_data.keys()).intersection(user_data['watchlist']):
-        if abs(api_data[state]['votes_cast'] - user_data['old'][state]['votes_cast']) > 10:
+
+        delta_votes = abs(
+            api_data[state]['votes_cast']
+            - user_data['old'][state]['votes_cast'])
+
+        if delta_votes > user_data['limit']:
             yield textify_change(
-                state=state, old=old[state], new=api_data[state], candidates=candidates)
+                state=state, old=old[state],
+                new=api_data[state], candidates=candidates)
 
             old[state] = api_data[state]
     else:
@@ -86,7 +92,7 @@ def _get_user_data(chat_id, bot_data):
         user_data['watchlist'] = battlegrounds
 
     if 'limit' not in user_data:
-        user_data['limit'] = 0
+        user_data['limit'] = 10
 
     return user_data
 
