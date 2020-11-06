@@ -75,7 +75,12 @@ def _get_user_data(chat_id, bot_data):
     if chat_id not in bot_data['chats']:
         bot_data['chats'][chat_id] = {}
 
-    return bot_data['chats'][chat_id]
+    user_data = bot_data['chats'][chat_id]
+
+    if 'watchlist' not in user_data:
+        user_data['watchlist'] = battlegrounds
+
+    return user_data
 
 
 def info(update: Update, context: CallbackContext) -> None:
@@ -83,12 +88,14 @@ def info(update: Update, context: CallbackContext) -> None:
     chat_id = update.message.chat_id
     user_data = _get_user_data(chat_id, context.bot_data)
 
-    try:
-        raw_state = context.args[0]
-    except (IndexError, ValueError):
-        states = user_data.get('watchlist', set())
+    if len(context.args) == 0:
+        states = user_data['watchlist']
+
+        if not states:
+            update.message.reply_text(f"You aren't watching any states")
+            return
     else:
-        if not (state := _select_state(raw_state)):
+        if not (state := _select_state(context.args[0])):
             update.message.reply_text(f'Unknown state {raw_state}')
             return
         states = {state}
@@ -114,9 +121,6 @@ def watch(update: Update, context: CallbackContext) -> None:
         update.message.reply_text(f'Unknown state {raw_state}')
         return
 
-    if 'watchlist' not in user_data:
-        user_data['watchlist'] = battlegrounds
-
     update.message.reply_text(f"I've added {state} to your watchlist.")
 
     user_data['watchlist'] |= {state}
@@ -137,9 +141,6 @@ def unwatch(update: Update, context: CallbackContext) -> None:
         update.message.reply_text(f'Unknown state {raw_state}')
         return
 
-    if 'watchlist' not in user_data:
-        user_data['watchlist'] = battlegrounds
-
     update.message.reply_text(f"I've removed {state} from your watchlist.")
 
     user_data['watchlist'] -= {state}
@@ -150,12 +151,10 @@ def states(update: Update, context: CallbackContext) -> None:
     chat_id = update.message.chat_id
     user_data = _get_user_data(chat_id, context.bot_data)
 
-    watchlist = user_data.get('watchlist', set())
-
     txt = 'I know of the following states:\n'
     for k, v in states_dict.items():
         txt += f'{v} ({k})'
-        if v in watchlist:
+        if v in user_data['watchlist']:
             txt += ' - watching'
         txt += '\n'
 
@@ -188,7 +187,7 @@ def poll_api(context):
         if chat_id not in context.bot_data['chats']:
             context.bot_data['chats'] = {}
 
-        user_data = context.bot_data['chats'].get(chat_id, {})
+        user_data = _get_user_data(chat_id, context.bot_data)
 
         for txt in _check(api_data, user_data):
             context.bot.send_message(chat_id, text=txt)
