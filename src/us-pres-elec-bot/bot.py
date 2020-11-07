@@ -1,5 +1,4 @@
 import logging
-import os
 
 from telegram import Update
 from telegram import ParseMode
@@ -228,13 +227,14 @@ def poll_api(context):
         for txt in _check(api_data, user_data):
             context.bot.send_message(
                 chat_id, text=txt, parse_mode=ParseMode.HTML)
-            
 
-def main():
-    persistence = PicklePersistence(filename='bot_persistence')
+
+def construct_bot(token, persistence_file, poll_interval, api_func):
+
+    persistence = PicklePersistence(filename=persistence_file)
 
     updater = Updater(
-        os.environ["TELEGRAM_BOT_TOKEN"],
+        token,
         use_context=True,
         persistence=persistence)
 
@@ -257,9 +257,4 @@ def main():
 
     updater.job_queue.run_repeating(poll_api, interval=60, first=10)
 
-    updater.start_polling()
-    updater.idle()
-
-
-if __name__ == '__main__':
-    main()
+    return updater
