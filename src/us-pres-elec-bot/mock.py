@@ -1,6 +1,6 @@
 import json
 
-from check import parse_data, get_data, textify_change, filter_states
+from .check import parse_data, get_data, textify_change, filter_states
 
 
 if __name__ == '__main__':
