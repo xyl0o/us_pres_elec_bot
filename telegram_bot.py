@@ -52,7 +52,7 @@ def check(context):
     old = user_data[chat_id]['state']
     new = parse_data(get_data())
 
-    for k in new.keys() & battlegrounds:
+    for k in set(new.keys()).intersection(battlegrounds):
         if old[k]['votes_cast'] != new[k]['votes_cast']:
 
             txt = textify_change(
