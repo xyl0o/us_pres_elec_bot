@@ -81,13 +81,14 @@ def set_interval(update: Update, context: CallbackContext) -> None:
     chat_id = update.message.chat_id
 
     try:
-        due = int(context.args[0]) * 60
-        if due < 0:
+        interval = int(context.args[0]) * 60
+        if interval < 0:
             update.message.reply_text('Sorry, we can not go back to future!')
             return
 
         _ = remove_job_if_exists(str(chat_id), context)
-        context.job_queue.run_repeating(check, due, context=chat_id, name=str(chat_id))
+        context.job_queue.run_repeating(check, interval, context=chat_id, name=str(chat_id))
+        context.bot_data['intervals'].update({chat_id: interval})
 
         text = 'Interval set successfully!'
 
@@ -101,17 +102,31 @@ def cancel(update: Update, context: CallbackContext) -> None:
     """Allow the user to cancel the updates"""
     chat_id = update.message.chat_id
     job_removed = remove_job_if_exists(str(chat_id), context)
+    context.bot_data['intervals'].update({chat_id: 0})
     text = "I won't bother you anymore." if job_removed else "I didn't plan on texting you anyway."
     update.message.reply_text(text)
 
 
 def main():
-    updater = Updater(os.environ["TELEGRAM_BOT_TOKEN"], use_context=True)
+    persistence = PicklePersistence(filename='bot_persistence')
+
+    updater = Updater(
+        os.environ["TELEGRAM_BOT_TOKEN"],
+        use_context=True,
+        persistence=persistence)
 
     updater.dispatcher.add_handler(CommandHandler("start", start))
     updater.dispatcher.add_handler(CommandHandler("help", start))
     updater.dispatcher.add_handler(CommandHandler("set", set_interval))
     updater.dispatcher.add_handler(CommandHandler("cancel", cancel))
+
+    if 'intervals' not in updater.dispatcher.bot_data:
+        updater.dispatcher.bot_data['intervals'] = {}
+
+    for chat_id, interval in updater.dispatcher.bot_data['intervals'].items():
+        if interval:
+            updater.job_queue.run_repeating(
+                check, interval, context=chat_id, name=str(chat_id))
 
     updater.start_polling()
     updater.idle()
