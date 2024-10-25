@@ -91,7 +91,7 @@ def info(update: Update, context: CallbackContext) -> None:
         if not (state := _select_state(raw_state)):
             update.message.reply_text(f'Unknown state {raw_state}')
             return
-        states = {raw_state}
+        states = {state}
 
     new = parse_data(get_data())
     for s in states:
