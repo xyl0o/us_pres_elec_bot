@@ -39,32 +39,42 @@ def get_data():
     return requests.get(api_endpoint).json()
 
 
-def textify_change(state_name, old, new):
+def textify_change(state_name, old, new, candidates):
     prev_cast = old['votes_cast']
     prev_all = old['votes_all']
-    prev_c = old['candidates']
 
     curr_cast = new['votes_cast']
     curr_all = new['votes_all']
-    curr_c = new['candidates']
-    biden_ahead = (curr_c['Joe Biden']['votes'] > curr_c['Donald Trump']['votes'])
 
-    candidate_delta = abs(curr_c['Joe Biden']['votes'] - curr_c['Donald Trump']['votes'])
 
-    return f"""
-A new vote count for {state_name}.
+    txt = f"A new vote count for {state_name}.\n"
 
-Biden gained {curr_c['Joe Biden']['votes'] - prev_c['Joe Biden']['votes']:,} votes.
-Trump gained {curr_c['Donald Trump']['votes'] - prev_c['Donald Trump']['votes']:,} votes.
+    # Sort candidates list by current votes
+    sorted_candidates = sorted(
+        candidates,
+        key=lambda c: new['candidates'][c]['votes'],
+        reverse=True)
 
-The current situation in {state_name} is as follows:
-Biden has {curr_c['Joe Biden']['votes']:,} votes ({curr_c['Joe Biden']['votes']/curr_cast * 100: 3.2f}%)
-Trump has {curr_c['Donald Trump']['votes']:,} votes ({curr_c['Donald Trump']['votes']/curr_cast * 100: 3.2f}%)
+    for c in sorted_candidates:
+        if (delta := old['candidates'][c]['votes'] - new['candidates'][c]['votes']) != 0:
+            trend = "gained" if delta > 0 else "lost"
+            txt += f"{c} {trend} {abs(delta):,} votes.\n"
 
-{"Biden" if biden_ahead else "Trump"} is ahead of {"Trump" if biden_ahead else "Biden"} by {candidate_delta:,} votes.
+    txt += "\n"
+    txt += f"The current situation in {state_name} is as follows:\n"
 
-Votes casted: {curr_cast:,} / {curr_all:,} ({curr_cast/curr_all * 100: 3.2f}%)
-"""
+    for c in sorted_candidates:
+        votes = new['candidates'][c]['votes']
+        txt += f"{c} has {votes:,} votes ({round(votes / curr_cast * 100, 2): 3.2f}%)\n"
+
+    lead_delta = new['candidates'][sorted_candidates[1]] - new['candidates'][sorted_candidates[0]]
+
+    txt += "\n"
+    txt += f"{sorted_candidates[0]} is ahead of {sorted_candidates[1]} by {lead_delta:,} votes.\n"
+
+    txt += "\n"
+    txt += f"Votes counted: {curr_cast:,} / {curr_all:,} ({curr_cast/curr_all * 100: 3.2f}%)\n"
+    txt += f"This leaves {curr_all - curr_cast} votes on the table.\n"
 
 
 if __name__ == '__main__':
