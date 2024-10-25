@@ -32,6 +32,7 @@ def start(update: Update, context: CallbackContext) -> None:
 Hey there!
 Use /set <minutes> to set the interval i should look for new votes.
 Use /cancel to stop me from texting you.
+Use /poll to get updates now.
 
 Currently the following states are considered: {battlegrounds}.
 """)
@@ -60,8 +61,12 @@ def check(context):
         context.bot.send_message(chat_id, text=txt)
 
         old[state] = new[state]
+    else:
+        return False # loop never ran
 
     user_data['old'] = old
+
+    return True
 
 
 def remove_job_if_exists(name, context):
@@ -107,6 +112,18 @@ def cancel(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(text)
 
 
+def poll(update: Update, context: CallbackContext) -> None:
+    """Allow the user to cancel the updates"""
+    chat_id = update.message.chat_id
+
+    if chat_id in context.bot_data['intervals']:
+        interval = context.bot_data['intervals'][chat_id]
+        remove_job_if_exists(str(chat_id), context)
+        context.job_queue.run_repeating(check, interval, context=chat_id, name=str(chat_id))
+
+    context.job_queue.run_once(check, 0, context=chat_id, name=f"{chat_id}_poll")
+
+
 def main():
     persistence = PicklePersistence(filename='bot_persistence')
 
@@ -118,6 +135,7 @@ def main():
     updater.dispatcher.add_handler(CommandHandler("start", start))
     updater.dispatcher.add_handler(CommandHandler("help", start))
     updater.dispatcher.add_handler(CommandHandler("set", set_interval))
+    updater.dispatcher.add_handler(CommandHandler("poll", poll))
     updater.dispatcher.add_handler(CommandHandler("cancel", cancel))
 
     if 'intervals' not in updater.dispatcher.bot_data:
