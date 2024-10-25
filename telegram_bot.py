@@ -31,33 +31,27 @@ candidates = ['Joe Biden', 'Donald Trump']
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(f"""
 Hey there!
-Use /set <minutes> to set the update interval.
-Use /cancel to stop me from texting you.
-Use /poll to force me to look for updates now.
+
+Use /subscribe <minutes> to get vote updates.
+Use /unsubscribe to stop me from texting you.
 Use /info <state> to get current state votes.
 Use /info to get current state votes of your watchlist.
 Use /watch <state> to add a state to your watchlist.
 Use /unwatch <state> to add unwatch a state.
 Use /states to get a list of all states.
-
-Currently the following states are considered: {battlegrounds}.
 """)
 
 
-def _check(user_data):
-    new = parse_data(get_data())
-    old = user_data.get('old')
+def _check(api_data, user_data):
+    if not (old := user_data.get('old')):
+        user_data['old'] = api_data
+        return False
 
-    if not old:
-        user_data['old'] = new
-        return
-
-    for state in filter_states(old, new, user_data['watchlist']):
-
+    for state in filter_states(old, api_data, user_data['watchlist']):
         yield textify_change(
-            state=state, old=old[state], new=new[state], candidates=candidates)
+            state=state, old=old[state], new=api_data[state], candidates=candidates)
 
-        old[state] = new[state]
+        old[state] = api_data[state]
     else:
         return False # loop never ran
 
@@ -76,80 +70,23 @@ def _select_state(txt):
     return
 
 
-def check(context):
-    """Crawl api and notfy "subscribers" if votes changed"""
+def _get_user_data(chat_id, bot_data):
 
-    chat_id = context.job.context
+    if chat_id not in bot_data['chats']:
+        bot_data['chats'][chat_id] = {}
 
-    for txt in _check(context.dispatcher.user_data):
-        context.bot.send_message(chat_id, text=txt)
-
-
-def remove_job_if_exists(name, context):
-    current_jobs = context.job_queue.get_jobs_by_name(name)
-
-    if not current_jobs:
-        return False
-
-    for job in current_jobs:
-        job.schedule_removal()
-
-    return True
-
-
-def set_interval(update: Update, context: CallbackContext) -> None:
-    """Set the update interval. context.args[0] should contain update interval in minutes."""
-    chat_id = update.message.chat_id
-
-    try:
-        interval = int(context.args[0]) * 60
-        if interval < 0:
-            update.message.reply_text('Sorry, we can not go back to future!')
-            return
-
-        _ = remove_job_if_exists(str(chat_id), context)
-        context.job_queue.run_repeating(check, interval, context=chat_id, name=str(chat_id))
-        context.bot_data['intervals'].update({chat_id: interval})
-        if 'watchlist' not in context.user_data:
-            context.user_data['watchlist'] = battlegrounds
-
-        txt = 'Interval set successfully!\n'
-        txt += 'You are currently watching '
-        txt += ', '.join(sorted(context.user_data['watchlist']))
-
-        update.message.reply_text(txt)
-
-    except (IndexError, ValueError):
-        update.message.reply_text('Usage: /set <minutes>')
-
-
-def cancel(update: Update, context: CallbackContext) -> None:
-    """Allow the user to cancel the updates"""
-    chat_id = update.message.chat_id
-    job_removed = remove_job_if_exists(str(chat_id), context)
-    context.bot_data['intervals'].update({chat_id: 0})
-    text = "I won't bother you anymore." if job_removed else "I didn't plan on texting you anyway."
-    update.message.reply_text(text)
-
-
-def poll(update: Update, context: CallbackContext) -> None:
-    """Allow the user to cancel the updates"""
-    chat_id = update.message.chat_id
-
-    for txt in _check(context.user_data):
-        update.message.reply_text(txt)
-    else:
-        update.message.reply_text("No changes found")
+    return bot_data['chats'][chat_id]
 
 
 def info(update: Update, context: CallbackContext) -> None:
     """Allow the user to cancel the updates"""
     chat_id = update.message.chat_id
+    user_data = _get_user_data(chat_id, context.bot_data)
 
     try:
         raw_state = context.args[0]
     except (IndexError, ValueError):
-        states = context.user_data.get('watchlist', set())
+        states = user_data.get('watchlist', set())
     else:
         if not (state := _select_state(raw_state)):
             update.message.reply_text(f'Unknown state {raw_state}')
@@ -165,6 +102,7 @@ def info(update: Update, context: CallbackContext) -> None:
 def watch(update: Update, context: CallbackContext) -> None:
     """Allow the user to cancel the updates"""
     chat_id = update.message.chat_id
+    user_data = _get_user_data(chat_id, context.bot_data)
 
     try:
         raw_state = str(context.args[0])
@@ -176,17 +114,18 @@ def watch(update: Update, context: CallbackContext) -> None:
         update.message.reply_text(f'Unknown state {raw_state}')
         return
 
-    if 'watchlist' not in context.user_data:
-        context.user_data['watchlist'] = battlegrounds
+    if 'watchlist' not in user_data:
+        user_data['watchlist'] = battlegrounds
 
     update.message.reply_text(f"I've added {state} to your watchlist.")
 
-    context.user_data['watchlist'] |= {state}
+    user_data['watchlist'] |= {state}
 
 
 def unwatch(update: Update, context: CallbackContext) -> None:
     """Allow the user to cancel the updates"""
     chat_id = update.message.chat_id
+    user_data = _get_user_data(chat_id, context.bot_data)
 
     try:
         raw_state = context.args[0]
@@ -198,19 +137,20 @@ def unwatch(update: Update, context: CallbackContext) -> None:
         update.message.reply_text(f'Unknown state {raw_state}')
         return
 
-    if 'watchlist' not in context.user_data:
-        context.user_data['watchlist'] = battlegrounds
+    if 'watchlist' not in user_data:
+        user_data['watchlist'] = battlegrounds
 
     update.message.reply_text(f"I've removed {state} from your watchlist.")
 
-    context.user_data['watchlist'] -= {state}
+    user_data['watchlist'] -= {state}
 
 
 def states(update: Update, context: CallbackContext) -> None:
     """Allow the user to cancel the updates"""
     chat_id = update.message.chat_id
+    user_data = _get_user_data(chat_id, context.bot_data)
 
-    watchlist = context.user_data.get('watchlist', set())
+    watchlist = user_data.get('watchlist', set())
 
     txt = 'I know of the following states:\n'
     for k, v in states_dict.items():
@@ -220,6 +160,38 @@ def states(update: Update, context: CallbackContext) -> None:
         txt += '\n'
 
     update.message.reply_text(txt)
+
+
+def subscribe(update: Update, context: CallbackContext) -> None:
+    """Allow the user to cancel the updates"""
+    chat_id = update.message.chat_id
+    user_data = _get_user_data(chat_id, context.bot_data)
+    context.bot_data['subscribers'] |= {chat_id}
+
+    update.message.reply_text(f"I will message you when new votes come in.")
+
+
+def unsubscribe(update: Update, context: CallbackContext) -> None:
+    """Allow the user to cancel the updates"""
+    chat_id = update.message.chat_id
+    user_data = _get_user_data(chat_id, context.bot_data)
+    context.bot_data['subscribers'] -= {chat_id}
+
+    update.message.reply_text(f"I won't bother you with updates anymore.")
+
+
+def poll_api(context):
+    api_data = parse_data(get_data())
+
+    for chat_id in context.bot_data['subscribers']:
+
+        if chat_id not in context.bot_data['chats']:
+            context.bot_data['chats'] = {}
+
+        user_data = context.bot_data['chats'].get(chat_id, {})
+
+        for txt in _check(api_data, user_data):
+            context.bot.send_message(chat_id, text=txt)
 
 
 def main():
@@ -232,21 +204,20 @@ def main():
 
     updater.dispatcher.add_handler(CommandHandler("start", start))
     updater.dispatcher.add_handler(CommandHandler("help", start))
-    updater.dispatcher.add_handler(CommandHandler("set", set_interval))
-    updater.dispatcher.add_handler(CommandHandler("poll", poll))
-    updater.dispatcher.add_handler(CommandHandler("cancel", cancel))
     updater.dispatcher.add_handler(CommandHandler("info", info))
     updater.dispatcher.add_handler(CommandHandler("watch", watch))
     updater.dispatcher.add_handler(CommandHandler("unwatch", unwatch))
     updater.dispatcher.add_handler(CommandHandler("states", states))
+    updater.dispatcher.add_handler(CommandHandler("subscribe", subscribe))
+    updater.dispatcher.add_handler(CommandHandler("unsubscribe", unsubscribe))
 
-    if 'intervals' not in updater.dispatcher.bot_data:
-        updater.dispatcher.bot_data['intervals'] = {}
+    updater.dispatcher.bot_data['chats'] = \
+        updater.dispatcher.bot_data.get('chats', {})
 
-    for chat_id, interval in updater.dispatcher.bot_data['intervals'].items():
-        if interval:
-            updater.job_queue.run_repeating(
-                check, interval, context=chat_id, name=str(chat_id))
+    updater.dispatcher.bot_data['subscribers'] = \
+        updater.dispatcher.bot_data.get('subscribers', set())
+
+    updater.job_queue.run_repeating(poll_api, interval=60, first=10)
 
     updater.start_polling()
     updater.idle()
