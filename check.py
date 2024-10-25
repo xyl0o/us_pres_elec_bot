@@ -86,8 +86,8 @@ def textify_change(state, new, candidates, old=None):
     else:
         txt += f"{sorted_candidates[0]} is ahead of {sorted_candidates[1]} by {lead_delta:,} votes.\n"
         txt += "\n"
-        txt += f"So far {curr_cast:,} votes have been counted ({curr_cast/curr_all * 100: 3.2f}%)\n"
-        txt += f"This leaves about {int(round(open_votes, -2)):,} votes on the table.\n"
+        txt += f"So far {curr_cast:,} votes have been counted (roughly {round(curr_cast/curr_all * 100, 1): 3.1f}%)\n"
+        # txt += f"This leaves about {int(round(open_votes, -2)):,} votes on the table.\n"
 
     return txt
 
