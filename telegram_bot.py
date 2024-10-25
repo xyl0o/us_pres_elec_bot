@@ -24,6 +24,8 @@ battlegrounds = {
     'Pennsylvania',
 }
 
+candidates = ['Joe Biden', 'Donald Trump']
+
 user_data = {}  # no persistence!
 
 
@@ -53,10 +55,13 @@ def check(context):
     for k in new.keys() & battlegrounds:
         if old[k]['votes_cast'] != new[k]['votes_cast']:
 
-            context.bot.send_message(
-                chat_id,
-                text=textify_change(k, old[k], new[k]))
-
+            txt = textify_change(
+                state_name=k,
+                old=old[k],
+                new=new[k],
+                candidates=candidates
+            )
+            context.bot.send_message(chat_id, text=txt)
             old[k] = new[k]
 
 
