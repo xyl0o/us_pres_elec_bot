@@ -35,6 +35,7 @@ Use /set <minutes> to set the update interval.
 Use /cancel to stop me from texting you.
 Use /poll to force me to look for updates now.
 Use /info <state> to get current state votes.
+Use /info to get current state votes of your watchlist.
 Use /watch <state> to add a state to your watchlist.
 Use /unwatch <state> to add unwatch a state.
 Use /states to get a list of all states.
@@ -146,19 +147,19 @@ def info(update: Update, context: CallbackContext) -> None:
     chat_id = update.message.chat_id
 
     try:
-        state_abbrev = context.args[0]
+        raw_state = context.args[0]
     except (IndexError, ValueError):
-        update.message.reply_text('Usage: /info <state>')
-        return
-
-    if not (state := states_dict.get(state_abbrev.upper())):
-        update.message.reply_text(f'Unknown state {state_abbrev}')
-        return
+        states = context.user_data.get('watchlist', set())
+    else:
+        if not (state := _select_state(raw_state)):
+            update.message.reply_text(f'Unknown state {raw_state}')
+            return
+        states = {raw_state}
 
     new = parse_data(get_data())
-    update.message.reply_text(
-        textify_change(
-            state=state, new=new[state], candidates=candidates))
+    for s in states:
+        update.message.reply_text(
+            textify_change(state=s, new=new[s], candidates=candidates))
 
 
 def watch(update: Update, context: CallbackContext) -> None:
