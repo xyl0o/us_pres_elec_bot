@@ -82,7 +82,7 @@ def textify_change(state, new, candidates, old=None):
     txt += "\n"
 
     if open_votes < lead_delta:
-        txt += f"{sorted_candidates[0]} won this state by a {lead_delta:,} marin.\n"
+        txt += f"{sorted_candidates[0]} won this state by a {lead_delta:,} vote margin.\n"
     else:
         txt += f"{sorted_candidates[0]} is ahead of {sorted_candidates[1]} by {lead_delta:,} votes.\n"
         txt += "\n"
