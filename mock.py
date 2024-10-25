@@ -1,6 +1,7 @@
 import json
 
-from check import parse_data, get_data, textify_change
+from check import parse_data, get_data, textify_change, filter_states
+
 
 if __name__ == '__main__':
 
@@ -23,10 +24,11 @@ if __name__ == '__main__':
     with open("new.json", "r") as f_new:
         new = parse_data(json.loads(f_new.read()))
 
-    for k in set(new.keys()).intersection(battlegrounds):
-        if old[k]['votes_cast'] != new[k]['votes_cast']:
-            print(textify_change(
-                state_name=k,
-                old=old[k],
-                new=new[k],
-                candidates=candidates))
+    for state in filter_states(old, new, battlegrounds):
+
+        txt = textify_change(
+            state=state, old=old[state], new=new[state], candidates=candidates)
+
+        print(txt)
+
+        old[state] = new[state]

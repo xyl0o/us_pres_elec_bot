@@ -39,7 +39,13 @@ def get_data():
     return requests.get(api_endpoint).json()
 
 
-def textify_change(state_name, old, new, candidates):
+def filter_states(old, new, battlegrounds):
+    for state in set(new.keys()).intersection(battlegrounds):
+        if (new[state]['votes_cast'] - old[state]['votes_cast']) > 10:
+            yield state
+
+
+def textify_change(state, old, new, candidates):
     prev_cast = old['votes_cast']
     prev_all = old['votes_all']
 
@@ -47,7 +53,7 @@ def textify_change(state_name, old, new, candidates):
     curr_all = new['votes_all']
 
 
-    txt = f"More votes are in for {state_name}.\n"
+    txt = f"More votes are in for {state}.\n"
 
     # Sort candidates list by current votes
     sorted_candidates = sorted(
@@ -61,7 +67,7 @@ def textify_change(state_name, old, new, candidates):
             txt += f"{c} {trend} {abs(delta):,} votes.\n"
 
     txt += "\n"
-    txt += f"The current situation in {state_name}:\n"
+    txt += f"The current situation in {state}:\n"
 
     for c in sorted_candidates:
         votes = new['candidates'][c]['votes']
@@ -96,20 +102,14 @@ if __name__ == '__main__':
 
     while True:
         new = parse_data(get_data())
-        changes = False
 
-        for k in set(new.keys()).intersection(battlegrounds):
-            if old[k]['votes_cast'] != new[k]['votes_cast']:
+        for state in filter_states(old, new, battlegrounds):
 
-                print(textify_change(
-                    state_name=k,
-                    old=old[k],
-                    new=new[k],
-                    candidates=candidates))
-                old[k] = new[k]
-                changes = True
+            txt = textify_change(
+                state=state, old=old[state], new=new[state], candidates=candidates)
 
-        if not changes:
-            print(f"no changes {datetime.now()}")
+            print(txt)
+
+            old[state] = new[state]
 
         sleep(30)

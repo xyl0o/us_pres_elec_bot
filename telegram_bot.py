@@ -4,7 +4,7 @@ import os
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, CallbackContext
 
-from check import parse_data, get_data, textify_change
+from check import parse_data, get_data, textify_change, filter_states
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -52,17 +52,14 @@ def check(context):
     old = user_data[chat_id]['state']
     new = parse_data(get_data())
 
-    for k in set(new.keys()).intersection(battlegrounds):
-        if old[k]['votes_cast'] != new[k]['votes_cast']:
+    for state in filter_states(old, new, battlegrounds):
 
-            txt = textify_change(
-                state_name=k,
-                old=old[k],
-                new=new[k],
-                candidates=candidates
-            )
-            context.bot.send_message(chat_id, text=txt)
-            old[k] = new[k]
+        txt = textify_change(
+            state=state, old=old[state], new=new[state], candidates=candidates)
+
+        context.bot.send_message(chat_id, text=txt)
+
+        old[state] = new[state]
 
 
 def remove_job_if_exists(name, context):
