@@ -90,31 +90,3 @@ def textify_change(state, new, candidates, old=None):
             txt += f"{curr_cast:,} votes have been counted so far (roughly {round(curr_cast/curr_all * 100, 1): 3.1f}%)."
 
     return txt
-
-
-if __name__ == '__main__':
-    battlegrounds = {
-        'Arizona',
-        'Georgia',
-        'Nevada',
-        'North Carolina',
-        'Pennsylvania',
-    }
-
-    candidates = ['Joe Biden', 'Donald Trump']
-
-    old = parse_data(get_data())
-
-    while True:
-        new = parse_data(get_data())
-
-        for state in filter_states(old, new, battlegrounds):
-
-            txt = textify_change(
-                state=state, old=old[state], new=new[state], candidates=candidates)
-
-            print(txt)
-
-            old[state] = new[state]
-
-        sleep(30)
