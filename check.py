@@ -47,7 +47,7 @@ def textify_change(state_name, old, new, candidates):
     curr_all = new['votes_all']
 
 
-    txt = f"A new vote count for {state_name}.\n"
+    txt = f"More votes are in for {state_name}.\n"
 
     # Sort candidates list by current votes
     sorted_candidates = sorted(
@@ -61,7 +61,7 @@ def textify_change(state_name, old, new, candidates):
             txt += f"{c} {trend} {abs(delta):,} votes.\n"
 
     txt += "\n"
-    txt += f"The current situation in {state_name} is as follows:\n"
+    txt += f"The current situation in {state_name}:\n"
 
     for c in sorted_candidates:
         votes = new['candidates'][c]['votes']
@@ -75,8 +75,8 @@ def textify_change(state_name, old, new, candidates):
     txt += f"{sorted_candidates[0]} is ahead of {sorted_candidates[1]} by {lead_delta:,} votes.\n"
 
     txt += "\n"
-    txt += f"Votes counted: {curr_cast:,} / {curr_all:,} ({curr_cast/curr_all * 100: 3.2f}%)\n"
-    txt += f"This leaves {curr_all - curr_cast} votes on the table.\n"
+    txt += f"So far {curr_cast:,} votes have been counted ({curr_cast/curr_all * 100: 3.2f}%)\n"
+    txt += f"This leaves about {curr_all - curr_cast:,} votes on the table.\n"
 
 
 if __name__ == '__main__':
