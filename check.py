@@ -61,7 +61,7 @@ def textify_change(state, new, candidates, old=None):
         txt += f"More votes are in for {state}.\n"
 
         for c in sorted_candidates:
-            if (delta := old['candidates'][c]['votes'] - new['candidates'][c]['votes']) != 0:
+            if (delta := new['candidates'][c]['votes'] - old['candidates'][c]['votes']) != 0:
                 trend = "gained" if delta > 0 else "lost"
                 txt += f"{c} {trend} {abs(delta):,} votes.\n"
 
