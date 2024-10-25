@@ -45,15 +45,9 @@ def filter_states(old, new, battlegrounds):
             yield state
 
 
-def textify_change(state, old, new, candidates):
-    prev_cast = old['votes_cast']
-    prev_all = old['votes_all']
-
+def textify_change(state, new, candidates, old=None):
     curr_cast = new['votes_cast']
     curr_all = new['votes_all']
-
-
-    txt = f"More votes are in for {state}.\n"
 
     # Sort candidates list by current votes
     sorted_candidates = sorted(
@@ -61,12 +55,18 @@ def textify_change(state, old, new, candidates):
         key=lambda c: new['candidates'][c]['votes'],
         reverse=True)
 
-    for c in sorted_candidates:
-        if (delta := old['candidates'][c]['votes'] - new['candidates'][c]['votes']) != 0:
-            trend = "gained" if delta > 0 else "lost"
-            txt += f"{c} {trend} {abs(delta):,} votes.\n"
+    txt = ""
 
-    txt += "\n"
+    if old:
+        txt += f"More votes are in for {state}.\n"
+
+        for c in sorted_candidates:
+            if (delta := old['candidates'][c]['votes'] - new['candidates'][c]['votes']) != 0:
+                trend = "gained" if delta > 0 else "lost"
+                txt += f"{c} {trend} {abs(delta):,} votes.\n"
+
+        txt += "\n"
+
     txt += f"The current situation in {state}:\n"
 
     for c in sorted_candidates:
