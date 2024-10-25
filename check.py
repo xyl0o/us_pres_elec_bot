@@ -78,6 +78,8 @@ def textify_change(state_name, old, new, candidates):
     txt += f"So far {curr_cast:,} votes have been counted ({curr_cast/curr_all * 100: 3.2f}%)\n"
     txt += f"This leaves about {curr_all - curr_cast:,} votes on the table.\n"
 
+    return txt
+
 
 if __name__ == '__main__':
 
