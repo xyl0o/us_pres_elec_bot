@@ -55,39 +55,39 @@ def textify_change(state, new, candidates, old=None):
         key=lambda c: new['candidates'][c]['votes'],
         reverse=True)
 
-    txt = ""
-
-    if old:
-        txt += f"More votes are in for {state}.\n"
-
-        for c in sorted_candidates:
-            if (delta := new['candidates'][c]['votes'] - old['candidates'][c]['votes']) != 0:
-                trend = "gained" if delta > 0 else "lost"
-                txt += f"{c} {trend} {abs(delta):,} votes.\n"
-
-        txt += "\n"
-
-    txt += f"The current situation in {state}:\n"
-
-    for c in sorted_candidates:
-        votes = new['candidates'][c]['votes']
-        txt += f"{c} has {votes:,} votes ({round(votes / curr_cast * 100, 2): 3.2f}%)\n"
-
     lead_delta = abs(
         new['candidates'][sorted_candidates[0]]['votes']
         - new['candidates'][sorted_candidates[1]]['votes'])
 
     open_votes = curr_all - curr_cast
 
-    txt += "\n"
+    txt = ""
 
-    if open_votes < lead_delta:
-        txt += f"{sorted_candidates[0]} won this state by a {lead_delta:,} vote margin.\n"
+    if old:
+        txt += f"More votes in <strong>{state}</strong>.\n"
+        txt += f"{sorted_candidates[0]} is now ahead of {sorted_candidates[1]} by {lead_delta:,} votes."
+
+        txt += "\n\n"
+        for c in sorted_candidates:
+            if (delta := new['candidates'][c]['votes'] - old['candidates'][c]['votes']) != 0:
+                trend = "gained" if delta > 0 else "lost"
+                txt += f"{c} {trend} {abs(delta):,} votes.\n"
     else:
-        txt += f"{sorted_candidates[0]} is ahead of {sorted_candidates[1]} by {lead_delta:,} votes.\n"
-        txt += "\n"
-        txt += f"So far {curr_cast:,} votes have been counted (roughly {round(curr_cast/curr_all * 100, 1): 3.1f}%)\n"
-        # txt += f"This leaves about {int(round(open_votes, -2)):,} votes on the table.\n"
+        # txt += f"<strong>{state}</strong>:\n"
+        txt += f"<pre>{state}</pre>\n"
+
+        if open_votes < lead_delta:
+            txt += f"{sorted_candidates[0]} won this state by a {lead_delta:,} vote margin.\n\n"
+        else:
+            txt += f"{sorted_candidates[0]} is ahead of {sorted_candidates[1]} by {lead_delta:,} votes.\n\n"
+
+        for c in sorted_candidates:
+            votes = new['candidates'][c]['votes']
+            txt += f"{c} has {votes:,} votes ({round(votes / curr_cast * 100, 2): 3.2f}%)\n"
+
+        if open_votes >= lead_delta:
+            txt += "\n"
+            txt += f"{curr_cast:,} votes have been counted so far (roughly {round(curr_cast/curr_all * 100, 1): 3.1f}%)."
 
     return txt
 
