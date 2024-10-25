@@ -115,12 +115,6 @@ def cancel(update: Update, context: CallbackContext) -> None:
 def poll(update: Update, context: CallbackContext) -> None:
     """Allow the user to cancel the updates"""
     chat_id = update.message.chat_id
-
-    if chat_id in context.bot_data['intervals']:
-        interval = context.bot_data['intervals'][chat_id]
-        remove_job_if_exists(str(chat_id), context)
-        context.job_queue.run_repeating(check, interval, context=chat_id, name=str(chat_id))
-
     context.job_queue.run_once(check, 0, context=chat_id, name=f"{chat_id}_poll")
 
 
